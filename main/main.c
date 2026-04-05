@@ -15,7 +15,7 @@
 #include "pretty_effect.h"
 
 /*
- This code displays some fancy graphics on the 320x240 LCD on an ESP-WROVER_KIT board.
+ This code displays some fancy graphics on the 320x240 LCD on an ESP-WROVER-KIT board.
 
  The ILI9341/ST7789V has an C/D line, which is connected to a GPIO. It expects this
  line to be low for a command and high for data

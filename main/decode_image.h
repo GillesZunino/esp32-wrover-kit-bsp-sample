@@ -25,7 +25,7 @@ extern "C" {
  *        Effectively, you can get the pixel data by doing ``decode_image(&myPixels); pixelval=myPixels[ypos][xpos];``
  * @return - ESP_ERR_NOT_SUPPORTED if image is malformed or a progressive jpeg file
  *         - ESP_ERR_NO_MEM if out of memory
- *         - ESP_OK on succesful decode
+ *         - ESP_OK on successful decode
  */
 esp_err_t decode_image(uint16_t **pixels);
 
