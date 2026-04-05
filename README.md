@@ -6,13 +6,15 @@ A sample ESP-IDF application for the **ESP32-WROVER-KIT** development board that
 
 ## Board
 
-| ![ESP-WROVER-KIT](components/esp_wrover_kit_bsp/doc/esp_wrover_kit.webp) |
-|:---:|
-| *ESP32-WROVER-KIT v4.1* |
+<div align="center">
+  <img src="components/esp_wrover_kit_bsp/doc/esp_wrover_kit.webp" alt="ESP-WROVER-KIT"><br>
+  <em>ESP32-WROVER-KIT v4.1</em>
+</div>
 
-| ![ESP-WROVER-KIT PCB layout](components/esp_wrover_kit_bsp/doc/esp-wrover-kit-v4.1-layout-front.png) |
-|:---:|
-| *ESP32-WROVER-KIT v4.1 — PCB front layout* |
+<div align="center">
+  <img src="components/esp_wrover_kit_bsp/doc/esp-wrover-kit-v4.1-layout-front.png" alt="ESP-WROVER-KIT PCB layout"><br>
+  <em>ESP32-WROVER-KIT v4.1 — PCB front layout</em>
+</div>
 
 ---
 
