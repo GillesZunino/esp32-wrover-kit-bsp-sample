@@ -41,7 +41,8 @@ esp_err_t decode_image(uint16_t **pixels)
     esp_err_t ret = ESP_OK;
 
     // Allocate pixel memory. Each line is an array of IMAGE_W 16-bit pixels; the `*pixels` array itself contains pointers to these lines
-    *pixels = calloc(IMAGE_H * IMAGE_W, sizeof(uint16_t));
+    // We allocate in internal RAM for performance when sending over SPI
+    *pixels = heap_caps_malloc(IMAGE_H * IMAGE_W * sizeof(uint16_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE((*pixels), ESP_ERR_NO_MEM, err, TAG, "Error allocating memory for lines");
 
     // JPEG decode config
