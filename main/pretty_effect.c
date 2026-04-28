@@ -11,9 +11,16 @@
 
 #include <math.h>
 
+#include <esp_log.h>
+
 #include "decode_image.h"
 #include "pretty_effect.h"
 
+
+#define SIN_LUT_SIZE 1024
+#define SIN_LUT_MASK (SIN_LUT_SIZE - 1)
+
+static int8_t sin_lut[SIN_LUT_SIZE];
 
 uint16_t *pixels;
 
@@ -42,18 +49,34 @@ static int8_t xcomp[320], ycomp[240];
 void pretty_effect_calc_lines(uint16_t *dest, int line, int frame, int linect)
 {
     if (frame != prev_frame) {
-        // We need to calculate a new set of offset coefficients. Take some random sines as offsets to make everything look pretty and fluid-y
-        for (int x = 0; x < 320; x++) {
-            xofs[x] = sin(frame * 0.15 + x * 0.06) * 4;
+        // Integer phase increments derived from round(coeff * SIN_LUT_SIZE / 2π)
+        {
+            uint32_t phase = ((uint32_t)frame * 24u) & SIN_LUT_MASK;
+            for (int x = 0; x < 320; x++) {
+                xofs[x] = sin_lut[phase];
+                phase = (phase + 10u) & SIN_LUT_MASK;
+            }
         }
-        for (int y = 0; y < 240; y++) {
-            yofs[y] = sin(frame * 0.1 + y * 0.05) * 4;
+        {
+            uint32_t phase = ((uint32_t)frame * 16u) & SIN_LUT_MASK;
+            for (int y = 0; y < 240; y++) {
+                yofs[y] = sin_lut[phase];
+                phase = (phase + 8u) & SIN_LUT_MASK;
+            }
         }
-        for (int x = 0; x < 320; x++) {
-            xcomp[x] = sin(frame * 0.11 + x * 0.12) * 4;
+        {
+            uint32_t phase = ((uint32_t)frame * 18u) & SIN_LUT_MASK;
+            for (int x = 0; x < 320; x++) {
+                xcomp[x] = sin_lut[phase];
+                phase = (phase + 20u) & SIN_LUT_MASK;
+            }
         }
-        for (int y = 0; y < 240; y++) {
-            ycomp[y] = sin(frame * 0.07 + y * 0.15) * 4;
+        {
+            uint32_t phase = ((uint32_t)frame * 11u) & SIN_LUT_MASK;
+            for (int y = 0; y < 240; y++) {
+                ycomp[y] = sin_lut[phase];
+                phase = (phase + 24u) & SIN_LUT_MASK;
+            }
         }
         prev_frame = frame;
     }
@@ -66,5 +89,10 @@ void pretty_effect_calc_lines(uint16_t *dest, int line, int frame, int linect)
 
 esp_err_t pretty_effect_init(void)
 {
+    // Floating point operations are notoriously slow on ESP32 - Pre-calculate all the values of sin() we will need and store them in a lookup table
+    for (int i = 0; i < SIN_LUT_SIZE; i++) {
+        sin_lut[i] = (int8_t)roundf(sinf(2.0f * (float)M_PI * i / SIN_LUT_SIZE) * 4.0f);
+    }
+
     return decode_image(&pixels);
 }
