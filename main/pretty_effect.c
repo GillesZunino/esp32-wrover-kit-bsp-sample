@@ -11,8 +11,6 @@
 
 #include <math.h>
 
-#include <esp_log.h>
-
 #include "decode_image.h"
 #include "pretty_effect.h"
 

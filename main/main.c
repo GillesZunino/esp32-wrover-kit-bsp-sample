@@ -10,6 +10,12 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include <esp_log.h>
+
+#ifdef CONFIG_ESP32_WROVER_KIT_DETAILED_FRAME_TIMING_LOG
+#include <esp_timer.h>
+#endif
+
 #include <bsp/esp_wrover_kit.h>
 
 #include "pretty_effect.h"
@@ -28,9 +34,13 @@ static const char *TAG = "wrover-kit-sample";
 // We process lines by PARALLEL_LINES at a time. Make sure 240 is dividable by this.
 #define PARALLEL_LINES 16
 
-// We limit the framerate by TARGET_FPS
-#define TARGET_FPS 30
-#define FRAME_PERIOD_TICKS pdMS_TO_TICKS(1000 / TARGET_FPS)
+// We limit the framerate by ESP32_WROVER_KIT_ANIMATION_TARGET_FPS
+#define FRAME_PERIOD_TICKS pdMS_TO_TICKS(1000 / CONFIG_ESP32_WROVER_KIT_ANIMATION_TARGET_FPS)
+
+#ifdef CONFIG_ESP32_WROVER_KIT_DETAILED_FRAME_TIMING_LOG
+#define FRAME_BUDGET_US    (1000000 / CONFIG_ESP32_WROVER_KIT_ANIMATION_TARGET_FPS)
+#define FRAME_BUDGET_TICKS FRAME_PERIOD_TICKS
+#endif
 
 
 // Type to pass LCD handles to the display task
@@ -54,32 +64,63 @@ static void animate_esp32_image(esp_lcd_panel_handle_t bsp_lcd_panel_handle, esp
 #endif
 
     // Allocate memory for the pixel buffers
-    for (int i = 0; i < 2; i++) {
+    for (int8_t i = 0; i < 2; i++) {
         lines[i] = heap_caps_malloc(BSP_LCD_V_RES * PARALLEL_LINES * sizeof(uint16_t), mem_cap);
         assert(lines[i] != NULL);
     }
 
-    int frame = 0;
-    int calc_line = 0;
+    uint32_t frame = 0;
+    uint8_t calc_line = 0;
+
     TickType_t last_wake = xTaskGetTickCount();
 
     while (1) {
         frame++;
-        for (int y = 0; y < BSP_LCD_H_RES; y += PARALLEL_LINES) {
-            int lines_to_draw = BSP_LCD_H_RES - y;
+
+#ifdef CONFIG_ESP32_WROVER_KIT_DETAILED_FRAME_TIMING_LOG
+        int64_t t0 = esp_timer_get_time();
+#endif
+
+        for (uint16_t y = 0; y < BSP_LCD_H_RES; y += PARALLEL_LINES) {
+            uint16_t lines_to_draw = BSP_LCD_H_RES - y;
             if (lines_to_draw > PARALLEL_LINES) {
                 lines_to_draw = PARALLEL_LINES;
             }
 
             // Calculate one horizontal stripe and push it via esp_lcd panel API.
             pretty_effect_calc_lines(lines[calc_line], y, frame, lines_to_draw);
-            esp_err_t ret = esp_lcd_panel_draw_bitmap(bsp_lcd_panel_handle, 0, y, BSP_LCD_V_RES, y + lines_to_draw, lines[calc_line]);
-            assert(ret == ESP_OK);
+            esp_err_t err = esp_lcd_panel_draw_bitmap(bsp_lcd_panel_handle, 0, y, BSP_LCD_V_RES, y + lines_to_draw, lines[calc_line]);
+            calc_line = calc_line != 0 ? 0 : 1;
 
-            calc_line = (calc_line == 1) ? 0 : 1;
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to draw bitmap: %d", err);
+            }
         }
 
-        vTaskDelayUntil(&last_wake, FRAME_PERIOD_TICKS);
+#ifdef CONFIG_ESP32_WROVER_KIT_DETAILED_FRAME_TIMING_LOG
+        int64_t render_us    = esp_timer_get_time() - t0;
+        int64_t render_ticks = render_us * configTICK_RATE_HZ / 1000000;
+        int64_t slack_us     = FRAME_BUDGET_US    - render_us;
+        int64_t slack_ticks  = FRAME_BUDGET_TICKS - render_ticks;
+        ESP_LOGI(TAG, "[Frame %lu] Render:%lld us (%lld ticks) - Budget:%d us (%d ticks) - Slack:%lld us (%lld ticks)", (unsigned long)frame, render_us, render_ticks, FRAME_BUDGET_US, FRAME_BUDGET_TICKS, slack_us, slack_ticks);
+#endif
+
+        if (xTaskDelayUntil(&last_wake, FRAME_PERIOD_TICKS) == pdFALSE) {
+            // Frame overran its budget; the call above did not block - Force at least 1 tick of blocking so IDLEn can feed the watchdog
+            last_wake = xTaskGetTickCount();
+            vTaskDelay(1);
+
+#ifdef CONFIG_ESP32_WROVER_KIT_DETAILED_FRAME_TIMING_LOG
+            int64_t overrun_us    = -slack_us;
+            int64_t overrun_ticks = -slack_ticks;
+            ESP_LOGW(TAG, "Frame OVERRUN by %lld us (%lld ticks)", overrun_us, overrun_ticks);
+#endif
+
+        } else {
+#ifdef CONFIG_ESP32_WROVER_KIT_DETAILED_FRAME_TIMING_LOG
+            ESP_LOGI(TAG, "Frame ON TIME by %lld us (%lld ticks)", slack_us, slack_ticks);
+#endif
+        }
     }
 }
 
