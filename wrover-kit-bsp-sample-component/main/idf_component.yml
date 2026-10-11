@@ -1,0 +1,4 @@
+dependencies:
+  idf: '>=5.2'
+  esp_jpeg: '>=1.0.2'
+  espressif/esp_wrover_kit: ^2.0.2

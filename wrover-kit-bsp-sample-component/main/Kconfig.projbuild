@@ -1,0 +1,18 @@
+# -----------------------------------------------------------------------------------
+# Copyright 2026, Gilles Zunino
+# -----------------------------------------------------------------------------------
+
+menu "ESP32 WROVER KIT BSP Sample"
+
+    config ESP32_WROVER_KIT_ANIMATION_TARGET_FPS
+        int "Image animation target FPS"
+        default 20
+        help
+            Image animation target frames per second.
+
+    config  ESP32_WROVER_KIT_DETAILED_FRAME_TIMING_LOG
+        bool "Log in-depth frame timing"
+        default n
+        help
+            Emit in-depth logging about frame timing including render time, frame budget, and slack time.
+endmenu
