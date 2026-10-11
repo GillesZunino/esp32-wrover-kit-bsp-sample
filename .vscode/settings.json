@@ -36,7 +36,11 @@
     //"openocd/esp32-ft4232hl-to-jtag.cfg"
     "board/esp32-wrover-kit-3.3v.cfg"
   ],
-  "idf.openOcdLaunchArgs": [],
+  "idf.openOcdLaunchArgs": [
+    "-d${config:idf.openOcdDebugLevel}",
+    "-f", "${config:idf.openOcdConfigs}",
+    "-s", "${workspaceFolder}",
+  ],
 
   "idf.monitorNoReset": false,
   "idf.launchMonitorOnDebugSession": true,
@@ -49,7 +53,5 @@
   "idf.svdFilePath": "${workspaceFolder}/svd/${env:IDF_TARGET}.svd",
 
   "idf.flashType": "JTAG",
-
-  "idf.portWin": "COM8",
-  "idf.port": "/dev/tty.usbmodem1411101"
+  "idf.port": "COM8"
 }
