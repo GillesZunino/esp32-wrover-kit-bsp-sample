@@ -1,6 +1,6 @@
 # ESP32-WROVER-KIT BSP Sample
 
-A sample ESP-IDF application for the **ESP32-WROVER-KIT** development board that demonstrates LCD animation and RGB LED control using the [Espressif Board Support Package (BSP)](https://github.com/espressif/esp-bsp/tree/master/bsp/esp_wrover_kit).
+A sample ESP-IDF application for the **ESP32-WROVER-KIT** development board that demonstrates LCD animation and RGB LED control using the [Espressif Board Support Package (BSP)](https://github.com/espressif/esp-bsp/tree/master/bsp/esp_wrover_kit). It references the `BSP: ESP-WROVER_KIT` component from the [Espressif Components Registry](https://components.espressif.com/components/espressif/esp_wrover_kit/versions/2.0.2/readme).
 
 ---
 
